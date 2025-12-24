@@ -112,20 +112,3 @@
 
 2. 點選上方 `邏輯閘` 可以選擇下方的條件要在如何的 Boolean 條件下發生 Trigger
     ![Trigger_Condition](./png/Trigger_Condition.png)
-
->📌 Note：  
->
-> - 若訊號為高速 clock domain，建議先經過 D Flip-Flop 進行觸發延遲再接入 ILA  
-> - ILA 必須由 **free-running clock** 驅動，確保時脈不會被 gating、reset、或控制邏輯中斷  
-> - 避免使用 gated clock 或條件性 enable 的 clock 作為 ILA 的 clock source  
-> - 若觀察跨 clock domain 訊號，請先將其同步處理後再接入 ILA，以避免 metastability
->
->📌 Free-running clock：
->
-> - 不會被設計中的控制訊號（如 enable/reset）中斷的時脈  
-> - 與被觀察訊號在同一個 clock domain 或可被同步跨域  
->
->Free-running clock Example in PYNQ-Z2 :
->
-> - 系統主時脈( H16 pin in PYNQ-Z2 ): clk_125MHz  
-> - Zynq PS 送出的 FCLK_CLK0
