@@ -8,7 +8,7 @@ AXI CDMA (Central Direct Memory Access) 是一個專門用來在記憶體映射 
 
 ### Port Description
 
-![AXI_Stream](./png/AXI_CDMA.png)
+![AXI_CDMA_block](./png/AXI_CDMA_block.png)
 
 CDMA 的介面比一般 DMA 單純，主要分為「控制」與「數據」兩大類：
 | 介面名稱 | 方向 | AXI 類型 | 功能描述 |
@@ -23,11 +23,11 @@ CDMA 的介面比一般 DMA 單純，主要分為「控制」與「數據」兩�
 
 ### Settings
 
-![AXI_Stream](./png/AXI_CDMA_settings.png)
+![AXI_CDMA](./png/AXI_CDMA.png)
 
 - Enable Scatter Gather:
 
-  - Unchecked: 使用 Simple Mode。這是最單純的模式，CPU 每次給一個來源、一個目的、一個長度，CDMA 就搬一次。適合初學者與大區塊資料搬運。
+  - Unchecked: 使用 Simple Mode。這是最單純的模式，CPU 每次給一個來源、一個目的、一個長度，CDMA 就搬一次。適合大區塊資料搬運。
 
   - Checked: 使用 Scatter-Gather (SG) Mode。適合搬運分散在記憶體不同位置的破碎資料 (Linked List)，控制較複雜。
 
@@ -42,28 +42,46 @@ CDMA 的介面比一般 DMA 單純，主要分為「控制」與「數據」兩�
   - 決定一次 AXI 傳輸突發 (Burst) 的長度。數值越大 (如 16, 32, 64)，匯流排利用率通常越高。
 
 ## Part 8.1 Block Design
+
 1. Create a new Vivado Project and Create a new Block Design
+   
 2. 加入`ZYNQ7 Processing System`，點`Run Block Automation`
-3. 設定`ZYNQ7 Processing System`，點`PS-PL Configuration`，打開`HP Slave AXI Interface`，勾選 `S AXI HP0 interface` 
-![image](https://hackmd.io/_uploads/SJLGKQqBZg.png)
-4. 加入`AXI Central Direct Memory Access`，在設定中取消勾選`Enable Scatter Gather` 
-![image](https://hackmd.io/_uploads/rypJqmqBZe.png)
-5. 加入`AXI BRAM Controller`，將`Number of BRAM Interfaces`設為`1` 
-![image](https://hackmd.io/_uploads/S1LD9QqB-l.png)
+   
+3. 設定`ZYNQ7 Processing System`，點`PS-PL Configuration`，打開`HP Slave AXI Interface`，勾選 `S AXI HP0 interface`
+   
+![ZYNQ7](./png/ZYNQ7.png)
+
+4. 加入`AXI Central Direct Memory Access`，在設定中取消勾選`Enable Scatter Gather`
+   
+![AXI_CDMA](./png/AXI_CDMA.png)
+
+5. 加入`AXI BRAM Controller`，將`Number of BRAM Interfaces`設為`1`
+   
+![AXI_BRAAM](./png/AXI_BRAM.png)
+
 6. 加入`Block Memory Generator`
-7. 加入2個`AXI SmartConnect`，把`Number of Master Interfaces`設為2 
-![image](https://hackmd.io/_uploads/B1kziQ5rbl.png)
+   
+7. 加入2個`AXI SmartConnect`，把`Number of Master Interfaces`設為2
+
+![AXI_SmartConnect](./png/AXI_SmartConnect.png)
+
 8. 手動接線
-    * Zynq M_AXI_GP0 -> AXI SmartConnect (1號) 的 S00_AXI
-    * AXI SmartConnect (1號) 的 M00_AXI -> CDMA 的 S_AXI_LITE
-    * AXI SmartConnect (1號) 的 M01_AXI -> AXI SmartConnect (2號)的S01_AXI
-    * CDMA M_AXI -> AXI SmartConnect (2號) 的 S00_AXI
-    * AXI SmartConnect (2號) 的 M00_AXI -> Zynq 的 S_AXI_HP0
-    * AXI SmartConnect (2號) 的 M01_AXI -> BRAM Controller 的 S_AXI
-    * BRAM Controller 的 BRAM_PORTA -> Block Memory Generator 的 BRAM_PORTA。
+    - Zynq M_AXI_GP0 -> AXI SmartConnect (1號) 的 S00_AXI
+    - AXI SmartConnect (1號) 的 M00_AXI -> CDMA 的 S_AXI_LITE
+    - AXI SmartConnect (1號) 的 M01_AXI -> AXI SmartConnect (2號)的S01_AXI
+    - CDMA M_AXI -> AXI SmartConnect (2號) 的 S00_AXI
+    - AXI SmartConnect (2號) 的 M00_AXI -> Zynq 的 S_AXI_HP0
+    - AXI SmartConnect (2號) 的 M01_AXI -> BRAM Controller 的 S_AXI
+    - BRAM Controller 的 BRAM_PORTA -> Block Memory Generator 的 BRAM_PORTA。
+
 9. 接完後按`Run Connection Automation`，結果如下圖
-![design_1_page-0001](https://hackmd.io/_uploads/HkkdnQcHbg.jpg)
+   
+![Block_Design](./png/Block_Design.jpg)
+
 10. 在`Address Editor`按下`Assign All`後結果如下圖
-![image](https://hackmd.io/_uploads/SJbwR79H-g.png)
+
+![Address_Editor](./png/Address_Editor.png)
+
 11. 執行`example.ipynb`，若最終輸出`SUCCESS! All data matches.` 即代表結果正確
-![image](https://hackmd.io/_uploads/BJ79RdcBWl.png)
+
+![Success](./png/Success.png)
