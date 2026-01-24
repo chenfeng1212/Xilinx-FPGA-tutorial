@@ -4,7 +4,19 @@
 
 ## CDMA Module
 
-AXI CDMA (Central Direct Memory Access) 是一個專門用來在記憶體映射 (Memory-Mapped) 空間之間搬運資料的硬體模組。不同於一般的 DMA (Part 7) 是處理 Stream 介面，CDMA 專注於 Memory to Memory 的傳輸。
+AXI CDMA (Central Direct Memory Access) 是一個專門用來在記憶體映射 (Memory-Mapped) 空間之間搬運資料的硬體模組。
+
+不同於一般的 DMA (Part 7) 主要是處理 Stream 介面 (如 AXI-Stream to Memory)，CDMA 專注於 Memory-to-Memory 的傳輸。這裡的 Memory 是指系統中所有映射在實體位址上的儲存空間，包含：
+
+1. 外部記憶體 (Off-chip DDR SDRAM)：容量最大，通常作為主記憶體。
+
+2. FPGA 內部記憶體 (On-chip Block RAM, BRAM)：位於 PL 端，速度快但容量小。
+
+3. 晶片上記憶體 (On-Chip Memory, OCM)：位於 PS 端，低延遲的快取與共享區。
+
+CDMA 能夠透過 AXI 匯流排，高效地在上述這些不同的實體記憶體介質之間 (例如：DDR to BRAM, 或 DDR to DDR) 進行資料搬運，而不需要 CPU 介入。
+
+CDMA 主要用於大量資料的傳輸，通常會發生在 DDR to DDR 。
 
 ### Port Description
 
@@ -17,9 +29,6 @@ CDMA 的介面比一般 DMA 單純，主要分為「控制」與「數據」兩�
 | M_AXI | Master | AXI4 | 數據傳輸介面 (Data Interface)。連接至 ZYNQ PS 的 HP Port (High Performance)。CDMA 透過這個介面直接向 DDR 記憶體發出讀取 (Read) 與寫入 (Write) 請求，不需經過 CPU。 |
 | M_AXI_SG | Master | AXI4 | 分散集合介面 (Scatter Gather)。CDMA 透過這個介面從記憶體中讀取「搬運清單」(Descriptors)。它讓 CDMA 能自動執行一連串不連續的搬運任務，而不需要 CPU 介入每一次傳輸。 | 
 | cdma_introut | Output | Interrupt | 中斷訊號。當搬運完成或發生錯誤時，可發送中斷通知 CPU 。 |
-| m_axi_aclk | Input | CLOCK | 系統時脈。這不是 AXI 匯流排，而是驅動 AXI 匯流排運作的「心跳」。在 Block Design 中，它通常會顯示為一個時鐘圖示的接腳。 |
-| s_axi_lite_aclk | Input | CLOCK | 控制介面時脈。在很多 IP 設計中（包含 CDMA），為了簡化，這個接腳常與 m_axi_aclk 內部短路或共用，通常接同一個來源即可。 |
-| s_axi_lite_aresetn| Input | RESET | 系統重置 (Active Low)。這是一個標準的重置介面。`n` 代表 Negative Logic (低電位動作)，也就是給 `0` 時會重置，給 `1` 時正常工作。 |
 
 ### Settings
 
