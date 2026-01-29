@@ -61,6 +61,7 @@ CDMA 的介面比一般 DMA 單純，主要分為「控制」與「數據」兩�
 ![ZYNQ7](./png/ZYNQ7.png)
 
 4. 加入`AXI Central Direct Memory Access`，在設定中取消勾選`Enable Scatter Gather`
+* `Scatter Gather`模式允許`CDMA`讀取位於記憶體中的`Descriptor Chain`，此次lab用不到
    
 ![AXI_CDMA](./png/AXI_CDMA.png)
 
@@ -87,10 +88,42 @@ CDMA 的介面比一般 DMA 單純，主要分為「控制」與「數據」兩�
    
 ![Block_Design](./png/Block_Design.jpg)
 
-10. 在`Address Editor`按下`Assign All`後結果如下圖
+10. 在`Address Editor`按下`Assign All`後，記錄下`axi_bram_ctrl_0`的`Master Base Address`，並且將`Range`改成`64K`，如附圖所示。修改後記得回到`Block Design`做`Validate Design`
 
 ![Address_Editor](./png/Address_Editor.png)
 
-11. 執行`example.ipynb`，若最終輸出`SUCCESS! All data matches.` 即代表結果正確
+* 此Address是`CPU`用來檢查搬運結果的地方。當`CDMA`說搬運完成後，`CPU`會讀取這個地址來驗證資料是否正確
+* `Range`代表`IP`在系統記憶體地圖中所佔用的「地址空間大小」
+* `BRAM Controller (axi_bram_ctrl_0)`同時連接著`Zynq CPU (processing_system7_0)`以及`CDMA (axi_cdma_0)`，因此兩邊的Range大小皆需要修改
+
+11. 在Jupyter中建一個資料夾上傳`example.ipynb`, `.bit`檔, `.hwh`檔, `example1.txt`(範例文檔)，並執行`example.ipynb`。
+記得要確認程式碼中的`.bit`檔名與自己的檔案吻合，`.hwh`檔名要與`.bit`檔相同，且`BRAM_PHYS_ADDR`要與上個步驟中`Address Editor`中的`Master Base Address`相同，`BRAM_SIZE_LIMIT`也要確認，如下圖所示
+
+![Name_Check](./png/Name_Check.png)
+
+12. 若執行後輸出包含`Transfer Complete!` 即代表結果正確
 
 ![Success](./png/Success.png)
+
+13. `CDMA path` vs. `CPU path`
+
+* CDMA 是為了「批次搬運」設計的。它使用 AXI4 協定中的 Burst 傳輸（一次Handshaking，傳輸多筆資料），效率高
+    * 讀取路徑 (Source: DDR):
+    `CDMA (M_AXI)` 發出讀取請求 -> `AXI SmartConnect 2` -> `ZYNQ HP0 Port` (High Performance) -> `DDR Controller`
+
+    * 特點：HP Port 專為高頻寬設計，直通 DDR，不經過 CPU 的 L1/L2 Cache
+
+    * 寫入路徑 (Dest: BRAM):
+`CDMA (M_AXI)` 取得資料後 -> `AXI SmartConnect 2` -> `AXI BRAM Controller` -> `Block Memory Generator`
+
+* CPU 資料路徑 (Low-Volume / Single Beat)
+當你在 Python 寫 `bram.read()` 或 `input_buffer[i]` = ... 時，是 CPU 在做事。
+
+    * 路徑:
+`CPU Core` (ARM) -> `ZYNQ GP0 Port` (General Purpose) -> `AXI SmartConnect 1` -> `AXI SmartConnect 2` -> `AXI BRAM Controller` -> `BRAM`
+
+    * 比較:
+
+        * GP Port 是 32-bit Master，主要設計給「控制訊號」用（設定暫存器）。
+
+        * CPU 搬運是 Linear execution：讀指令 -> 讀資料 -> 寫資料 -> 迴圈。每次存取都需要完整的 AXI 握手，無法像 CDMA 一樣使用長 Burst。
